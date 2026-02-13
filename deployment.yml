@@ -1,0 +1,57 @@
+# The flow of deployment.yml
+
+apiVersion: apps/v1 
+#apiVersion: Think of it as a group identifier
+#Every Object(kind) is placed in a particular group
+#apiVersion needs to know "where should i look"
+#v1 → Pod, Service
+#apps/v1 → Deployment
+#batch/v1 → Job
+
+kind: Deployment
+# kind: it tells k8s whick type or kind of Object to create or work with
+metadata: # metadata is nothing but additional information 
+  name: nginx-deployment # the deployment name will be nginx-deployment
+# spec: provide specification of the kind
+spec:
+  replicas: 3 # maintain 3 replicas running at all the time
+  # selector:  it is crucial part of specification
+  # its job is to select the pods that have label given below and also manage them
+  selector:  
+    matchLabels: #the deployment must look for labels given and select them
+      app: nginx
+  # template: defines how Pods should look.
+  #Everything inside template is Pod definition.
+  template:
+    metadata: # *********
+      labels: # this is the part where we provide labels to the pods
+              # labels are like tags i. e.,  key: value pairs
+        app: nginx
+
+    spec: # specifications of pod
+      containers: # pod must include below listed containers
+        - name: nginx-container # provdie the given name to container
+          image: nginx:alpine
+          ports: 
+            - containerPort: 80 # it tells k8s that the container listens at port 80
+
+          # livenessProbe: It checks whether inside the pod the container is alive or not
+          # if not; restart the container not the pod
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10 # wait first 10 seconds before starting the checkup
+            periodSeconds: 5 #for every 5 seconds check the liveness
+            failureThreshold: 3 #if check fails 3 times restart the container
+
+          # readinessProbe: It checks whether application inside the container is ready or not
+          # if not; don't route traffic to that pod
+          # if yes: route the traffic
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            
